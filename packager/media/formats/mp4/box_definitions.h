@@ -327,6 +327,12 @@ struct AC3Specific : Box {
   std::vector<uint8_t> data;
 };
 
+struct AC4Specific : Box {
+	DECLARE_BOX_METHODS(AC4Specific);
+
+	std::vector<uint8_t> data;
+};
+
 struct EC3Specific : Box {
   DECLARE_BOX_METHODS(EC3Specific);
 
@@ -371,6 +377,7 @@ struct AudioSampleEntry : Box {
   ElementaryStreamDescriptor esds;
   DTSSpecific ddts;
   AC3Specific dac3;
+  AC4Specific dac4;
   EC3Specific dec3;
   OpusSpecific dops;
   FlacSpecific dfla;

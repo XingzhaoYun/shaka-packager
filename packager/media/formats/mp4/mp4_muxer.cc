@@ -70,6 +70,8 @@ FourCC CodecToFourCC(Codec codec, H26xStreamFormat h26x_stream_format) {
       return FOURCC_mp4a;
     case kCodecAC3:
       return FOURCC_ac_3;
+    case kCodecAC4:
+      return FOURCC_ac_4;
     case kCodecDTSC:
       return FOURCC_dtsc;
     case kCodecDTSH:
@@ -481,6 +483,9 @@ bool MP4Muxer::GenerateAudioTrak(const AudioStreamInfo* audio_info,
     case kCodecAC3:
       audio.dac3.data = audio_info->codec_config();
       break;
+    case kCodecAC4:
+      audio.dac4.data = audio_info->codec_config();
+      break;
     case kCodecEAC3:
       audio.dec3.data = audio_info->codec_config();
       break;
@@ -499,6 +504,12 @@ bool MP4Muxer::GenerateAudioTrak(const AudioStreamInfo* audio_info,
     // AC3 and EC3 does not fill in actual channel count and sample size in
     // sample description entry. Instead, two constants are used.
     audio.channelcount = 2;
+    audio.samplesize = 16;
+  } else if (audio_info->codec() == kCodecAC4) {
+    //ETSI TS 103 190-2, E.4.5 channelcount should be set to the total number of
+    //audio outputchannels of the default audio presentation of that track
+    audio.channelcount = audio_info->num_channels();
+    //ETSI TS 103 190-2, E.4.6 samplesize shall be set to 16.
     audio.samplesize = 16;
   } else {
     audio.channelcount = audio_info->num_channels();

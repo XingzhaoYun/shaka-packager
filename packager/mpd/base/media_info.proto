@@ -65,6 +65,19 @@ message MediaInfo {
     // EC3 Channel map bit fields, encoded based on ETSI TS 102 366 V1.3.1
     // Digital Audio Compression (AC-3, Enhanced AC-3) Standard E.1.3.1.8.
     optional uint32 ec3_channel_map = 1;
+
+    // AC4 Channel configuration bit fields(24-bits), encoded based on ETSI TS
+    // 103 190-2 V1.2.1
+    optional uint32 ac4_channel_config = 2;
+
+    // AC4 Channel configuration corresponding mpeg scheme value, encoded
+    // based on ETSI TS 103 190-2 V1.2.1
+    optional uint32 ac4_channel_config_mpeg_value = 3;
+
+    // AC4 payload info, including bitstream version (2 bits), presentation version (2 bits), mdcompat (3 bits) and ims ()
+    optional uint32 ac4_is_ims = 4;
+    // AC4 source content is atmos
+    optional uint32 ac4_is_atmos = 5;
   }
 
   message TextInfo {

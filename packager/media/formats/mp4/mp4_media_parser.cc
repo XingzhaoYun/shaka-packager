@@ -22,6 +22,7 @@
 #include "packager/media/base/video_stream_info.h"
 #include "packager/media/base/video_util.h"
 #include "packager/media/codecs/ac3_audio_util.h"
+#include "packager/media/codecs/ac4_audio_util.h"
 #include "packager/media/codecs/av1_codec_configuration_record.h"
 #include "packager/media/codecs/avc_decoder_configuration_record.h"
 #include "packager/media/codecs/dovi_decoder_configuration_record.h"
@@ -92,6 +93,8 @@ Codec FourCCToCodec(FourCC fourcc) {
       return kCodecDTSM;
     case FOURCC_ac_3:
       return kCodecAC3;
+    case FOURCC_ac_4:
+      return kCodecAC4;
     case FOURCC_ec_3:
       return kCodecEAC3;
     case FOURCC_fLaC:
@@ -438,6 +441,7 @@ bool MP4MediaParser::ParseMoov(BoxReader* reader) {
       uint32_t max_bitrate = 0;
       uint32_t avg_bitrate = 0;
       std::vector<uint8_t> codec_config;
+      std::string ac4_codec_string;
 
       switch (actual_format) {
         case FOURCC_mp4a: {
@@ -483,6 +487,11 @@ bool MP4MediaParser::ParseMoov(BoxReader* reader) {
         case FOURCC_ac_3:
           codec_config = entry.dac3.data;
           num_channels = static_cast<uint8_t>(GetAc3NumChannels(codec_config));
+          break;
+        case FOURCC_ac_4:
+          codec_config = entry.dac4.data;
+          if (!GetAc4CodecString(codec_config, ac4_codec_string))
+            return false;
           break;
         case FOURCC_ec_3:
           codec_config = entry.dec3.data;
@@ -543,6 +552,7 @@ bool MP4MediaParser::ParseMoov(BoxReader* reader) {
       DVLOG(1) << "is_audio_track_encrypted_: " << is_encrypted;
       streams.emplace_back(new AudioStreamInfo(
           track->header.track_id, timescale, duration, codec,
+          actual_format == FOURCC_ac_4 ? ac4_codec_string :
           AudioStreamInfo::GetCodecString(codec, audio_object_type),
           codec_config.data(), codec_config.size(), entry.samplesize,
           num_channels, sampling_frequency, seek_preroll_ns, codec_delay_ns,

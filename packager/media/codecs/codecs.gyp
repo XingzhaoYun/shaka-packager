@@ -17,6 +17,8 @@
         'aac_audio_specific_config.h',
         'ac3_audio_util.cc',
         'ac3_audio_util.h',
+        'ac4_audio_util.cc',
+        'ac4_audio_util.h',
         'av1_codec_configuration_record.cc',
         'av1_codec_configuration_record.h',
         'av1_parser.cc',
@@ -72,6 +74,7 @@
       'sources': [
         'aac_audio_specific_config_unittest.cc',
         'ac3_audio_util_unittest.cc',
+        'ac4_audio_util_unittest.cc',
         'av1_codec_configuration_record_unittest.cc',
         'av1_parser_unittest.cc',
         'avc_decoder_configuration_record_unittest.cc',

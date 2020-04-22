@@ -1227,6 +1227,21 @@ TEST_F(BoxDefinitionsTest, AC3SampleEntry) {
   ASSERT_EQ(entry, entry_readback);
 }
 
+TEST_F(BoxDefinitionsTest, AC4SampleEntry) {
+	AudioSampleEntry entry;
+	entry.format = FOURCC_ac_4;
+	entry.data_reference_index = 2;
+	entry.channelcount = 5;
+	entry.samplesize = 16;
+	entry.samplerate = 44100;
+	Fill(&entry.dac4);
+	entry.Write(this->buffer_.get());
+
+	AudioSampleEntry entry_readback;
+	ASSERT_TRUE(ReadBack(&entry_readback));
+	ASSERT_EQ(entry, entry_readback);
+}
+
 TEST_F(BoxDefinitionsTest, EC3SampleEntry) {
   AudioSampleEntry entry;
   entry.format = FOURCC_ec_3;

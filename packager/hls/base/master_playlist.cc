@@ -308,10 +308,20 @@ void BuildMediaTag(const MediaPlaylist& playlist,
   const MediaPlaylist::MediaPlaylistStreamType kAudio =
       MediaPlaylist::MediaPlaylistStreamType::kAudio;
   if (playlist.stream_type() == kAudio) {
-    std::string channel_string = std::to_string(playlist.GetNumChannels());
-    tag.AddQuotedString("CHANNELS", channel_string);
+    if (playlist.GetImsFlag() == 1 && playlist.GetAtmosFlag() == 1) {
+      std::string channel_string = "2/IMS,ATMOS";
+      tag.AddQuotedString("CHANNELS", channel_string);
+    } else if (playlist.GetImsFlag() == 1 && playlist.GetAtmosFlag() == 0) {
+      std::string channel_string = "2/IMS";
+      tag.AddQuotedString("CHANNELS", channel_string);
+    } else if (playlist.GetImsFlag() == 0 && playlist.GetAtmosFlag() == 1) {
+      std::string channel_string = std::to_string(playlist.GetNumChannels()) + "/ATMOS";
+      tag.AddQuotedString("CHANNELS", channel_string);
+    } else {
+      std::string channel_string = std::to_string(playlist.GetNumChannels());
+      tag.AddQuotedString("CHANNELS", channel_string);
+    }
   }
-
   out->append("\n");
 }
 

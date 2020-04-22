@@ -520,6 +520,12 @@ int MediaPlaylist::GetNumChannels() const {
   return media_info_.audio_info().num_channels();
 }
 
+int MediaPlaylist::GetImsFlag() const {
+  return media_info_.audio_info().codec_specific_data().ac4_is_ims();
+}
+int MediaPlaylist::GetAtmosFlag() const {
+  return media_info_.audio_info().codec_specific_data().ac4_is_atmos();
+}
 bool MediaPlaylist::GetDisplayResolution(uint32_t* width,
                                          uint32_t* height) const {
   DCHECK(width);

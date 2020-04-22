@@ -23,6 +23,8 @@ std::string AudioCodecToString(Codec codec) {
       return "AAC";
     case kCodecAC3:
       return "AC3";
+    case kCodecAC4:
+      return "AC4";
     case kCodecDTSC:
       return "DTSC";
     case kCodecDTSE:
