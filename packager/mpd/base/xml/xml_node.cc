@@ -464,10 +464,32 @@ bool RepresentationXmlNode::AddAudioChannelInfo(const AudioInfo& audio_info) {
     // Interoperability Points v3.0 9.2.1.2.
     const uint16_t ec3_channel_map =
         base::HostToNet16(audio_info.codec_specific_data().ec3_channel_map());
-    audio_channel_config_value =
-        base::HexEncode(&ec3_channel_map, sizeof(ec3_channel_map));
-    audio_channel_config_scheme =
-        "tag:dolby.com,2014:dash:audio_channel_configuration:2011";
+    const uint32_t ec3_channel_config_mpeg_value =
+          audio_info.codec_specific_data().ec3_channel_map_mpeg_value();
+    const uint32_t NO_MAPPING = 0xffffffff;
+    if (ec3_channel_config_mpeg_value == NO_MAPPING) {
+        audio_channel_config_value =
+            base::HexEncode(&ec3_channel_map, sizeof(ec3_channel_map));
+        audio_channel_config_scheme =
+            "tag:dolby.com,2014:dash:audio_channel_configuration:2011";
+    } else {
+        audio_channel_config_value = base::IntToString(ec3_channel_config_mpeg_value);
+        audio_channel_config_scheme =
+            "urn:mpeg:mpegB:cicp:ChannelConfiguration";
+    }
+    AddDescriptor("AudioChannelConfiguration", audio_channel_config_scheme,
+      audio_channel_config_value);
+    const uint32_t ec3_is_joc =
+      audio_info.codec_specific_data().ec3_is_joc();
+    if (ec3_is_joc) {
+      std::string complexity_index_type_a =
+        base::UintToString(audio_info.codec_specific_data().ec3_complexity_index_type_a());
+      AddDescriptor("SupplementalProperty",
+        "tag:dolby.com,2018:dash:EC3_ExtensionType:2018", "JOC");
+      AddDescriptor("SupplementalProperty",
+        "tag:dolby.com,2018:dash:EC3_ExtensionComplexityIndex:2018", complexity_index_type_a);
+    }
+    return true;
   } else {
     audio_channel_config_value = base::UintToString(audio_info.num_channels());
     audio_channel_config_scheme =

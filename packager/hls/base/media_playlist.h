@@ -188,6 +188,8 @@ class MediaPlaylist {
   /// @return number of channels for audio. 0 is returned for video.
   virtual int GetNumChannels() const;
 
+  virtual bool GetJocFlag() const;
+  virtual int GetComplexityIdenxTypeA() const;
   /// @return true if |width| and |height| have been set with a valid
   ///         resolution values.
   virtual bool GetDisplayResolution(uint32_t* width, uint32_t* height) const;

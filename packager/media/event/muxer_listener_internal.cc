@@ -122,6 +122,21 @@ void AddAudioInfo(const AudioStreamInfo* audio_stream_info,
     }
     audio_info->mutable_codec_specific_data()->set_ec3_channel_map(
         ec3_channel_map);
+    uint32_t ec3_channel_mpeg_value;
+    if (!CalculateEC3ChannelMapMpegSchemeValue(codec_config, ec3_channel_mpeg_value)) {
+        LOG(ERROR) << "Failed to calculate EC3 channel config corresponding mpeg value.";
+        return;
+    }
+    audio_info->mutable_codec_specific_data()->set_ec3_channel_map_mpeg_value(
+        ec3_channel_mpeg_value);
+    bool ec3_is_joc = false;
+    uint32_t ec3_complexity_index_type_a = 0;
+    if (!GetEc3Joc(codec_config, ec3_is_joc, ec3_complexity_index_type_a)) {
+      LOG(ERROR) << "Failed to calculate EC3 Joc content.";
+      return;
+    }
+    audio_info->mutable_codec_specific_data()->set_ec3_is_joc(ec3_is_joc);
+    audio_info->mutable_codec_specific_data()->set_ec3_complexity_index_type_a(ec3_complexity_index_type_a);
   }
 }
 

@@ -27,6 +27,12 @@ bool CalculateEC3ChannelMap(const std::vector<uint8_t>& ec3_data,
 ///         success; otherwise 0 is returned.
 size_t GetEc3NumChannels(const std::vector<uint8_t>& ec3_data);
 
+bool CalculateEC3ChannelMapMpegSchemeValue(const std::vector<uint8_t>& ec3_data,
+                                           uint32_t& mpeg_value);
+
+/// Get whether ec3 is a joc stream 
+bool GetEc3Joc(const std::vector<uint8_t>& ec3_data, bool& isJoc, uint32_t& complexity_index_type_a);
+
 }  // namespace media
 }  // namespace shaka
 
