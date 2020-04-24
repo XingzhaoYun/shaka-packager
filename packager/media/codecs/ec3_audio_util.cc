@@ -81,8 +81,8 @@ uint8_t ReverseBits8(uint8_t n) {
   return ((n >> 4) & 0x0f) | ((n & 0x0f) << 4);
 }
 
-//mapping based on ETSI TS 103 190-2, Table G.1
-int MappingChannelConfigtoMpegSchemeValue(uint32_t channel_map) {
+// based on ETSI TS 102 366 v1.4.1 Table I.1.1
+int MappingChannelConfigtoMpegValue(uint32_t channel_map) {
     int ret = 0;
 
     switch (channel_map) {
@@ -104,7 +104,8 @@ int MappingChannelConfigtoMpegSchemeValue(uint32_t channel_map) {
     case kCenter | kLeft | kRight | kLeftSurround | kRightSurround | kLFEScreen:
         ret = 6;
         break;
-    case kCenter | kLeft | kRight | kLwRwPair | kLeftSurround | kRightSurround | kLFEScreen:
+    case kCenter | kLeft | kRight | kLwRwPair | kLeftSurround | kRightSurround |
+         kLFEScreen:
         ret = 7;
         break;
     case kLeft | kRight | kCenterSurround:
@@ -116,19 +117,25 @@ int MappingChannelConfigtoMpegSchemeValue(uint32_t channel_map) {
     case kCenter | kLeft | kRight | kLrsRrsPair | kCenterSurround | kLFEScreen:
         ret = 11;
         break;
-    case kCenter | kLeft | kRight | kLeftSurround | kRightSurround | kLrsRrsPair | kLFEScreen:
+    case kCenter | kLeft | kRight | kLeftSurround | kRightSurround |
+         kLrsRrsPair | kLFEScreen:
         ret = 12;
         break;
-    case kCenter | kLeft | kRight | kLeftSurround | kRightSurround | kLFEScreen | kLvhRvhPair:
+    case kCenter | kLeft | kRight | kLeftSurround | kRightSurround |
+         kLFEScreen | kLvhRvhPair:
         ret = 14;
         break;
-    case kCenter | kLeft | kRight | kLeftSurround | kRightSurround | kLFEScreen | kLvhRvhPair | kLtsRtsPair:
+    case kCenter | kLeft | kRight | kLeftSurround | kRightSurround |
+         kLFEScreen | kLvhRvhPair | kLtsRtsPair:
         ret = 16;
         break;
-    case kCenter | kLeft | kRight | kLeftSurround | kRightSurround | kLFEScreen | kLvhRvhPair | kCenterVerticalHeight | kLtsRtsPair | kTopCenterSurround:
+    case kCenter | kLeft | kRight | kLeftSurround | kRightSurround |
+         kLFEScreen | kLvhRvhPair | kCenterVerticalHeight | kLtsRtsPair |
+         kTopCenterSurround:
         ret = 17;
         break;
-    case kCenter | kLeft | kRight | kLsdRsdPair | kLrsRrsPair | kLFEScreen | kLvhRvhPair | kLtsRtsPair:
+    case kCenter | kLeft | kRight | kLsdRsdPair | kLrsRrsPair | kLFEScreen |
+         kLvhRvhPair | kLtsRtsPair:
         ret = 19;
         break;
     default:
@@ -138,11 +145,11 @@ int MappingChannelConfigtoMpegSchemeValue(uint32_t channel_map) {
 }
 
 bool ExtractEc3Data(const std::vector<uint8_t>& ec3_data,
-  uint8_t* audio_coding_mode,
-  bool* lfe_channel_on,
-  uint16_t* dependent_substreams_layout,
-  bool* is_joc,
-  uint32_t* complexity_index_type_a) {
+                    uint8_t* audio_coding_mode,
+                    bool* lfe_channel_on,
+                    uint16_t* dependent_substreams_layout,
+                    bool* is_joc,
+                    uint32_t* complexity_index_type_a) {
   BitReader bit_reader(ec3_data.data(), ec3_data.size());
   // Read number of independent substreams and parse the independent substreams.
   uint8_t number_independent_substreams;
@@ -237,13 +244,13 @@ bool CalculateEC3ChannelMap(const std::vector<uint8_t>& ec3_data,
   return true;
 }
 
-bool CalculateEC3ChannelMapMpegSchemeValue(const std::vector<uint8_t>& ec3_data,
-    uint32_t& mpeg_value) {
-    uint32_t channel_map;
-    if (!CalculateEC3ChannelMap(ec3_data, &channel_map))
-        return false;
-    mpeg_value = (uint32_t)MappingChannelConfigtoMpegSchemeValue(channel_map);
-    return true;
+bool CalculateEC3ChannelMapMpegValue(const std::vector<uint8_t>& ec3_data,
+                                     uint32_t& mpeg_value) {
+  uint32_t channel_map;
+  if (!CalculateEC3ChannelMap(ec3_data, &channel_map))
+    return false;
+  mpeg_value = (uint32_t)MappingChannelConfigtoMpegValue(channel_map);
+  return true;
 }
 
 size_t GetEc3NumChannels(const std::vector<uint8_t>& ec3_data) {
@@ -262,7 +269,9 @@ size_t GetEc3NumChannels(const std::vector<uint8_t>& ec3_data) {
   return num_channels;
 }
 
-bool GetEc3Joc(const std::vector<uint8_t>& ec3_data, bool& isJoc, uint32_t& complexity_index_type_a) {
+bool GetEc3Joc(const std::vector<uint8_t>& ec3_data,
+               bool& isJoc,
+               uint32_t& complexity_index_type_a) {
   uint8_t audio_coding_mode;
   bool lfe_channel_on;
   uint16_t dependent_substreams_layout;

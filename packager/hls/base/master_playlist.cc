@@ -308,8 +308,9 @@ void BuildMediaTag(const MediaPlaylist& playlist,
   const MediaPlaylist::MediaPlaylistStreamType kAudio =
       MediaPlaylist::MediaPlaylistStreamType::kAudio;
   if (playlist.stream_type() == kAudio) {
-	  if (playlist.GetJocFlag()) {
-	    std::string channel_string = std::to_string(playlist.GetComplexityIdenxTypeA()) + "/JOC";
+	  if (playlist.GetJocFlag()) { // EC-3 with JOC
+	  std::string channel_string = 
+          std::to_string(playlist.GetComplexityIndexTypeA()) + "/JOC";
       tag.AddQuotedString("CHANNELS", channel_string);
 	  } else {
       std::string channel_string = std::to_string(playlist.GetNumChannels());

@@ -523,8 +523,9 @@ int MediaPlaylist::GetNumChannels() const {
 bool MediaPlaylist::GetJocFlag() const {
   return media_info_.audio_info().codec_specific_data().ec3_is_joc();
 }
-int MediaPlaylist::GetComplexityIdenxTypeA() const {
-  return media_info_.audio_info().codec_specific_data().ec3_complexity_index_type_a();
+int MediaPlaylist::GetComplexityIndexTypeA() const {
+  return media_info_.audio_info().codec_specific_data().
+  	  ec3_complexity_index_type_a();
 }
 bool MediaPlaylist::GetDisplayResolution(uint32_t* width,
                                          uint32_t* height) const {
