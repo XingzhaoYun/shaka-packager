@@ -475,28 +475,31 @@ bool RepresentationXmlNode::AddAudioChannelInfo(const AudioInfo& audio_info) {
         audio_info.codec_specific_data().ac4_channel_config_mpeg_value();
     //channel config is a 24-bits value
     const uint32_t ac4_channel_config =
-        base::HostToNet32(audio_info.codec_specific_data().ac4_channel_config() << 8);
+        base::HostToNet32(
+            audio_info.codec_specific_data().ac4_channel_config() << 8);
     const uint32_t ac4_is_ims =
         audio_info.codec_specific_data().ac4_is_ims();
 
     const uint32_t NO_MAPPING = 0xffffffff;
     if (ac4_channel_config_mpeg_value == NO_MAPPING) {
-        audio_channel_config_scheme =
-            "tag:dolby.com,2015:dash:audio_channel_configuration:2015";
-        audio_channel_config_value =
-            base::HexEncode(&ac4_channel_config, sizeof(ac4_channel_config) - 1);
+      audio_channel_config_scheme =
+          "tag:dolby.com,2015:dash:audio_channel_configuration:2015";
+      audio_channel_config_value =
+          base::HexEncode(&ac4_channel_config,
+                          sizeof(ac4_channel_config) - 1);
     } else {
-        audio_channel_config_scheme =
-            "urn:mpeg:mpegB:cicp:ChannelConfiguration";
-        audio_channel_config_value =
-            base::IntToString(ac4_channel_config_mpeg_value);
+      audio_channel_config_scheme =
+          "urn:mpeg:mpegB:cicp:ChannelConfiguration";
+      audio_channel_config_value =
+          base::IntToString(ac4_channel_config_mpeg_value);
     }
     AddDescriptor("AudioChannelConfiguration", audio_channel_config_scheme,
-        audio_channel_config_value);
+                  audio_channel_config_value);
 
     if (ac4_is_ims) {
-        return AddDescriptor("SupplementalProperty",
-            "tag:dolby.com,2016:dash:virtualized_content:2016", "1");
+      return AddDescriptor("SupplementalProperty",
+                           "tag:dolby.com,2016:dash:virtualized_content:2016",
+                           "1");
     }
 
     return true;

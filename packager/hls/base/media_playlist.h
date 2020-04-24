@@ -188,7 +188,9 @@ class MediaPlaylist {
   /// @return number of channels for audio. 0 is returned for video.
   virtual int GetNumChannels() const;
 
+  /// @return whether it's an AC-4 IMS encoded bit stream.
   virtual int GetImsFlag() const;
+  /// @return whether source content was ATMOS.
   virtual int GetAtmosFlag() const;
   /// @return true if |width| and |height| have been set with a valid
   ///         resolution values.

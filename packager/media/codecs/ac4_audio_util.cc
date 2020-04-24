@@ -18,7 +18,7 @@ namespace media {
 namespace {
 
 //mapping based on ETSI TS 103 190-2, Table G.1
-int MappingChannelConfigtoMpegSchemeValue(uint32_t channelConfig) {
+int MappingChannelConfigtoMpegValue(uint32_t channelConfig) {
   int ret = 0;
 
   switch (channelConfig) {
@@ -110,6 +110,7 @@ int MappingChannelConfigtoMpegSchemeValue(uint32_t channelConfig) {
   return ret;
 }
 
+// based on ETSI TS 103190-2 v1.2.1 E.11
 bool ac4_substream_group_dsi(BitReader& bit_reader) {
   bool b_substream_present;
   bit_reader.ReadBits(1, &b_substream_present);
@@ -164,12 +165,14 @@ inline bool byte_align(uint32_t cur_bits, BitReader& bit_reader) {
   return true;
 }
 
+// based on ETSI TS 103190-2 v1.2.1 E.10.1
 bool ac4_presentation_v1_dsi(BitReader& bit_reader,
                              uint8_t& mdcompat,
-                             uint32_t& presentation_channel_config,
+                             uint32_t& presentation_channel_mask_v1,
                              uint32_t pres_bytes,
                              uint8_t& dolby_atmos_indicator) {
-  const uint32_t presentation_start = bit_reader.bit_position();
+  //for the convenience of byte alignment.
+  const uint32_t presentation_start = bit_reader.bit_position();  
   uint8_t presentation_config_v1;
   bit_reader.ReadBits(5, &presentation_config_v1);
   uint8_t b_add_emdf_substreams;
@@ -177,10 +180,10 @@ bool ac4_presentation_v1_dsi(BitReader& bit_reader,
     b_add_emdf_substreams = 1;
   } else {
     bit_reader.ReadBits(3, &mdcompat);
-    bool b_presentation_group_index;
-    bit_reader.ReadBits(1, &b_presentation_group_index); // b_presentation_group_index
-    if (b_presentation_group_index) {
-      bit_reader.SkipBits(5); // presentation_group_index
+    bool b_presentation_id;
+    bit_reader.ReadBits(1, &b_presentation_id);
+    if (b_presentation_id) {
+      bit_reader.SkipBits(5); // presentation_id
     }
     bit_reader.SkipBits(19);
     bool b_presentation_channel_coded;
@@ -188,10 +191,11 @@ bool ac4_presentation_v1_dsi(BitReader& bit_reader,
     if (b_presentation_channel_coded) {
       uint8_t dsi_presentation_ch_mode;
       bit_reader.ReadBits(5, &dsi_presentation_ch_mode);
+      // presentation channel mode in [11, 12, 13, 14]
       if (dsi_presentation_ch_mode >= 11 && dsi_presentation_ch_mode <= 14) {
-        bit_reader.SkipBits(3); // 
+        bit_reader.SkipBits(3); 
       }
-      bit_reader.ReadBits(24, &presentation_channel_config);
+      bit_reader.ReadBits(24, &presentation_channel_mask_v1);
     }
     bool b_presentation_core_differs;
     bit_reader.ReadBits(1, &b_presentation_core_differs);
@@ -211,21 +215,17 @@ bool ac4_presentation_v1_dsi(BitReader& bit_reader,
       bit_reader.SkipBits(n_filter_bytes * 8);
     }
     if (presentation_config_v1 == 0x1f) {
-      // ac4_substream_group_dsi();
       ac4_substream_group_dsi(bit_reader);
     } else {
-      bit_reader.SkipBits(1); // b_multi_pid
-      if (presentation_config_v1 == 0 || presentation_config_v1 == 1 || presentation_config_v1 == 2) {
-        // ac4_substream_group_dsi();
-        // ac4_substream_group_dsi();
+      bit_reader.SkipBits(1);
+      if (presentation_config_v1 == 0 || 
+          presentation_config_v1 == 1 || 
+          presentation_config_v1 == 2) {
         ac4_substream_group_dsi(bit_reader);
         ac4_substream_group_dsi(bit_reader);
 
       }
       if (presentation_config_v1 == 3 || presentation_config_v1 == 4) {
-        // ac4_substream_group_dsi();
-        // ac4_substream_group_dsi();
-        // ac4_substream_group_dsi();
         ac4_substream_group_dsi(bit_reader);
         ac4_substream_group_dsi(bit_reader);
         ac4_substream_group_dsi(bit_reader);
@@ -233,8 +233,7 @@ bool ac4_presentation_v1_dsi(BitReader& bit_reader,
       if (presentation_config_v1 == 5) {
         uint8_t n_substream_groups_minus2;
         bit_reader.ReadBits(3, &n_substream_groups_minus2);
-        for (uint8_t i = 0; i < n_substream_groups_minus2 + 2; i++) {
-          // ac4_substream_group_dsi();
+        for (uint8_t sg = 0; sg < n_substream_groups_minus2 + 2; sg++) {
           ac4_substream_group_dsi(bit_reader);
         }
       }
@@ -256,15 +255,18 @@ bool ac4_presentation_v1_dsi(BitReader& bit_reader,
   bit_reader.ReadBits(1, &b_presentation_bitrate_info);
   if (b_presentation_bitrate_info) {
     // ac4_bitrate_dsi();
+    // based on ETSI TS 103 190-2 v1.2.1 E.7.1
     bit_reader.SkipBits(66);
   }
   bool b_alternative;
   bit_reader.ReadBits(1, &b_alternative);
   if (b_alternative) {
-    if (!byte_align(bit_reader.bit_position() - presentation_start, bit_reader)) {
+    if (!byte_align(bit_reader.bit_position() - presentation_start, 
+                    bit_reader)) {
       return false;
     }
     // alternative_info();
+    // based on ETSI TS 103 190-2 v1.2.1 E.12
     uint16_t name_len;
     bit_reader.ReadBits(16, &name_len);
     bit_reader.SkipBits(name_len * 8);
@@ -275,7 +277,8 @@ bool ac4_presentation_v1_dsi(BitReader& bit_reader,
   if (!byte_align(bit_reader.bit_position() - presentation_start, bit_reader)) {
     return false;
   }
-  if ((bit_reader.bit_position() - presentation_start) <= (pres_bytes - 1) * 8) {
+  if ((bit_reader.bit_position() - presentation_start) <= 
+      (pres_bytes - 1) * 8) {
     bit_reader.SkipBits(1);
     bit_reader.ReadBits(1, &dolby_atmos_indicator);
     bit_reader.SkipBits(4);
@@ -291,40 +294,47 @@ bool ac4_presentation_v1_dsi(BitReader& bit_reader,
 }
 
 bool ExtractAc4Data(const std::vector<uint8_t>& ac4_data,
-  uint8_t& bitstream_version,
-  uint8_t& presentation_version,
-  uint8_t& is_ims,
-  uint8_t& mdcompat,
-  uint32_t& presentation_channel_config,
-  uint8_t& dolby_atmos_indicator) {
+                    uint8_t& bitstream_version,
+                    uint8_t& presentation_version,
+                    uint8_t& is_ims,
+                    uint8_t& mdcompat,
+                    uint32_t& presentation_channel_mask_v1,
+                    uint8_t& dolby_atmos_indicator) {
   uint16_t n_presentation;
 
   RCHECK(ac4_data.size() > 0);
   BitReader bit_reader(ac4_data.data(), ac4_data.size());
 
   RCHECK(bit_reader.SkipBits(3) &&
-    bit_reader.ReadBits(7, &bitstream_version));
+      bit_reader.ReadBits(7, &bitstream_version));
 
   RCHECK(bit_reader.SkipBits(5) &&
-    bit_reader.ReadBits(9, &n_presentation));
+      bit_reader.ReadBits(9, &n_presentation));
 
   if (bitstream_version > 1) {
     uint8_t b_program_id = 0;
     bit_reader.ReadBits(1, &b_program_id);
     if (b_program_id) {
       bit_reader.SkipBits(16);
-      uint8_t temp = 0;
-      bit_reader.ReadBits(1, &temp);
-      if (temp) {
+      uint8_t b_uuid = 0;
+      bit_reader.ReadBits(1, &b_uuid);
+      if (b_uuid) {
         for (uint8_t i = 0; i < 8; i++) {
           bit_reader.SkipBits(16);
         }
       }
     }
   } else if (bitstream_version == 0) {
+    // only presentation version 1 is supported, bitstream_version == 0 has 
+    // presentation version of 0. 
     LOG(WARNING) << "Bitstream version 0 is not supported";
     return false;
-  } else {
+  } else if (bitstream_version == 1) {
+    // only presentation version 1 is supported, bitstream_version == 1 has 
+    // mixed presentation version of 0 and 1. 
+    LOG(WARNING) << "Bitstream version 1 is not supported";
+    return false;
+  } else { 
     LOG(WARNING) << "Invaild Bitstream version";
     return false;
   }
@@ -340,13 +350,16 @@ bool ExtractAc4Data(const std::vector<uint8_t>& ac4_data,
   bool ims_presentation = false;
   bool atmos_presentation = false;
   
-  bit_reader.ReadBits(8, &presentation_version);      // preread presentation_version and skip first ReadBits in for loop
+  // preread presentation_version and skip first ReadBits
+  bit_reader.ReadBits(8, &presentation_version);      
   if (presentation_version == 2 && n_presentation > 2) {
-    LOG(WARNING) << "Seeing multiple presentations, only single presentation（including IMS presentation) is supported";
+    LOG(WARNING) << "Seeing multiple presentations, only single presentation"
+                    " (including IMS presentation) is supported";
     return false;
   }
   if (presentation_version == 1 && n_presentation > 1) {
-    LOG(WARNING) << "Seeing multiple presentations, only single presentation (including IMS presentation) is supported";
+    LOG(WARNING) << "Seeing multiple presentations, only single presentation"
+                    " (including IMS presentation) is supported";
     return false;
   }
   n_presentation = 1;
@@ -375,7 +388,11 @@ bool ExtractAc4Data(const std::vector<uint8_t>& ac4_data,
         }
         // ac4_presentation_v1_dsi()
         const uint32_t presentation_start = bit_reader.bit_position();
-        if (!ac4_presentation_v1_dsi(bit_reader, mdcompat, presentation_channel_config, pres_bytes, dolby_atmos_indicator)) {
+        if (!ac4_presentation_v1_dsi(bit_reader, 
+                                     mdcompat,
+                                     presentation_channel_mask_v1,
+                                     pres_bytes,
+                                     dolby_atmos_indicator)) {
           return false;
         }
         const uint32_t presentation_end = bit_reader.bit_position();
@@ -402,7 +419,7 @@ bool ExtractAc4Data(const std::vector<uint8_t>& ac4_data,
 }  // namespace
 
 bool CalculateAC4ChannelConfig(const std::vector<uint8_t>& ac4_data,
-  uint32_t& channel_config) {
+                               uint32_t& channel_config) {
   uint8_t bitstream_version;
   uint8_t presentation_version;
   uint8_t mdcompat;
@@ -411,7 +428,8 @@ bool CalculateAC4ChannelConfig(const std::vector<uint8_t>& ac4_data,
   uint8_t dolby_atmos_indicator;
 
   if (!ExtractAc4Data(ac4_data, bitstream_version, presentation_version,
-    is_ims, mdcompat, ch_config, dolby_atmos_indicator)) return false;
+      is_ims, mdcompat, ch_config, dolby_atmos_indicator)) 
+    return false;
 
   if (ch_config == 0) {
     channel_config = 0x800000;
@@ -421,8 +439,8 @@ bool CalculateAC4ChannelConfig(const std::vector<uint8_t>& ac4_data,
   return true;
 }
 
-bool CalculateAC4ChannelConfigMpegSchemeValue(const std::vector<uint8_t>& ac4_data,
-  uint32_t& mpeg_value) {
+bool CalculateAC4ChannelConfigMpegValue(const std::vector<uint8_t>& ac4_data,
+                                        uint32_t& mpeg_value) {
   uint8_t bitstream_version;
   uint8_t presentation_version;
   uint8_t mdcompat;
@@ -431,38 +449,44 @@ bool CalculateAC4ChannelConfigMpegSchemeValue(const std::vector<uint8_t>& ac4_da
   uint8_t dolby_atmos_indicator;
 
   if (!ExtractAc4Data(ac4_data, bitstream_version, presentation_version,
-    is_ims, mdcompat, channel_config, dolby_atmos_indicator)) return false;
+      is_ims, mdcompat, channel_config, dolby_atmos_indicator)) 
+    return false;
 
-  mpeg_value = MappingChannelConfigtoMpegSchemeValue(channel_config);
+  mpeg_value = MappingChannelConfigtoMpegValue(channel_config);
   return true;
 }
 
-bool GetAc4CodecString(const std::vector<uint8_t>& ac4_data, std::string& codec_string) {
-  uint8_t bitstream_version;
-  uint8_t presentation_version;
-  uint8_t mdcompat;
-  uint8_t is_ims;
-  uint32_t channel_config;
-  uint8_t dolby_atmos_indicator;
+bool GetAc4CodecString(const std::vector<uint8_t>& ac4_data,
+                       std::string& codec_string) {
+                       uint8_t bitstream_version;
+                       uint8_t presentation_version;
+                       uint8_t mdcompat;
+                       uint8_t is_ims;
+                       uint32_t channel_config;
+                       uint8_t dolby_atmos_indicator;
 
   if (!ExtractAc4Data(ac4_data, bitstream_version, presentation_version,
-    is_ims, mdcompat, channel_config, dolby_atmos_indicator)) return false;
+      is_ims, mdcompat, channel_config, dolby_atmos_indicator)) 
+    return false;
 
   codec_string = base::StringPrintf("ac-4.%02d.%02d.%02d",
-    bitstream_version, presentation_version, mdcompat);
+                                    bitstream_version,
+                                    presentation_version,
+                                    mdcompat);
   return true;
 }
 
 bool GetAc4ImsFlag(const std::vector<uint8_t>& ac4_data, uint32_t& payload) {
-  uint8_t bitstream_version;
-  uint8_t presentation_version;
-  uint8_t mdcompat;
-  uint8_t is_ims;
-  uint32_t channel_config;
-  uint8_t dolby_atmos_indicator;
+                   uint8_t bitstream_version;
+                   uint8_t presentation_version;
+                   uint8_t mdcompat;
+                   uint8_t is_ims;
+                   uint32_t channel_config;
+                   uint8_t dolby_atmos_indicator;
 
   if (!ExtractAc4Data(ac4_data, bitstream_version, presentation_version,
-    is_ims, mdcompat, channel_config, dolby_atmos_indicator)) return false;
+      is_ims, mdcompat, channel_config, dolby_atmos_indicator)) 
+    return false;
   
   payload = (dolby_atmos_indicator << 1) | is_ims;
   return true;

@@ -309,13 +309,17 @@ void BuildMediaTag(const MediaPlaylist& playlist,
       MediaPlaylist::MediaPlaylistStreamType::kAudio;
   if (playlist.stream_type() == kAudio) {
     if (playlist.GetImsFlag() == 1 && playlist.GetAtmosFlag() == 1) {
+      // AC-4 with IMS presentation and Atmos content
       std::string channel_string = "2/IMS,ATMOS";
       tag.AddQuotedString("CHANNELS", channel_string);
     } else if (playlist.GetImsFlag() == 1 && playlist.GetAtmosFlag() == 0) {
+      // AC-4 with IMS presentation but not Atmos content
       std::string channel_string = "2/IMS";
       tag.AddQuotedString("CHANNELS", channel_string);
     } else if (playlist.GetImsFlag() == 0 && playlist.GetAtmosFlag() == 1) {
-      std::string channel_string = std::to_string(playlist.GetNumChannels()) + "/ATMOS";
+      // AC-4 with Atmos content but not IMS presentation
+      std::string channel_string = 
+          std::to_string(playlist.GetNumChannels()) + "/ATMOS";
       tag.AddQuotedString("CHANNELS", channel_string);
     } else {
       std::string channel_string = std::to_string(playlist.GetNumChannels());

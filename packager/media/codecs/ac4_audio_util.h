@@ -17,25 +17,26 @@
 namespace shaka {
 namespace media {
 
-/// Parse data from AC4Specific box and calculate AC4 channel config value based on
-/// ETSI TS 103 192-2 V1.2.1 Digital Audio Compression (AC-4)
+/// Parse data from AC4Specific box and calculate AC4 channel config value based
+/// on ETSI TS 103 192-2 V1.2.1 Digital Audio Compression (AC-4)
 /// Standard E.5
 /// @return false if there are parsing errors.
 bool CalculateAC4ChannelConfig(const std::vector<uint8_t>& ac4_data,
-    uint32_t& channel_config);
+                               uint32_t& channel_config);
 
 /// Generate MPEG audio channel configuration scheme value based on 
 /// ETSI TS 103 192-2 V1.2.1 Digital Audio Compression (AC-4)
 /// Standard G.3.2 
 /// @return false if there are parsing errors.
-bool CalculateAC4ChannelConfigMpegSchemeValue(const std::vector<uint8_t>& ac4_data,
-    uint32_t& mpeg_value);
+bool CalculateAC4ChannelConfigMpegValue(const std::vector<uint8_t>& ac4_data,
+                                        uint32_t& mpeg_value);
 
 /// Generate the AC-4 codec sting based on
 /// ETSI TS 103 190-2, V1.2.1 Digital Audio Compression (AC-4)
 /// Standard E.13
 /// @return false if there are parsing errors.
-bool GetAc4CodecString(const std::vector<uint8_t>& ac4_data, std::string& codec_string);
+bool GetAc4CodecString(const std::vector<uint8_t>& ac4_data,
+					   std::string& codec_string);
 
 /// Get the inforation of whether ths AC-4 stream is IMS or not
 /// @return false if there are parsing errors.
